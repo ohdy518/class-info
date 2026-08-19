@@ -1,5 +1,5 @@
 <script lang="ts">
-// Two-option sliding segmented control (timetable week + meal type toggles).
+// N-option sliding segmented control (admin tabs, meal type toggle, etc.).
 type Value = string | number;
 type Option = { value: Value; label: string; event?: string; eventProps?: string };
 
@@ -7,7 +7,7 @@ let {
 	options,
 	value = $bindable(),
 	onchange
-}: { options: [Option, Option]; value: Value; onchange?: (v: Value) => void } = $props();
+}: { options: Option[]; value: Value; onchange?: (v: Value) => void } = $props();
 
 const activeIndex = $derived(options.findIndex((o) => o.value === value));
 
@@ -20,8 +20,8 @@ function select(v: Value) {
 <div class="flex justify-center">
 	<div class="relative flex w-full rounded-xl bg-muted p-1 h-10 sm:h-11 text-sm sm:text-base">
 		<div
-			class="absolute top-1 h-8 sm:h-9 w-[calc(50%-0.25rem)] rounded-lg bg-card shadow-sm ring-1 ring-black/[0.04] dark:ring-white/[0.06] transition-transform duration-300 ease-out z-0"
-			style="transform: translateX({activeIndex * 100}%);"
+			class="absolute top-1 h-8 sm:h-9 rounded-lg bg-card shadow-sm ring-1 ring-black/[0.04] dark:ring-white/[0.06] transition-transform duration-300 ease-out z-0"
+			style="width: calc((100% - 0.5rem) / {options.length}); transform: translateX({activeIndex * 100}%);"
 			aria-hidden="true"
 		></div>
 		{#each options as option}

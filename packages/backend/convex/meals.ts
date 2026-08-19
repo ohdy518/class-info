@@ -129,13 +129,14 @@ export const getTwoWeeks = query({
         .withIndex("by_date_type", (q) => q.gte("date", startdate).lte("date", enddate))
         .collect();
 
-      const days: { date: string; lunch: typeof rows[number] | null; dinner: typeof rows[number] | null }[] = [];
+      const days: { date: string; breakfast: typeof rows[number] | null; lunch: typeof rows[number] | null; dinner: typeof rows[number] | null }[] = [];
       const d = new Date(start);
       while (d <= end) {
         const yyyymmdd = toYyyymmdd(d);
+        const breakfast = rows.find((m) => m.date === yyyymmdd && m.mealType === "조식") ?? null;
         const lunch = rows.find((m) => m.date === yyyymmdd && m.mealType === "중식") ?? null;
         const dinner = rows.find((m) => m.date === yyyymmdd && m.mealType === "석식") ?? null;
-        days.push({ date: yyyymmdd, lunch, dinner });
+        days.push({ date: yyyymmdd, breakfast, lunch, dinner });
         d.setDate(d.getDate() + 1);
       }
       return { startdate, enddate, days };
@@ -146,6 +147,7 @@ export const getTwoWeeks = query({
 
     const allDays = [...thisWeek.days, ...nextWeek.days];
     const availableMealTypes: string[] = [];
+    if (allDays.some((d) => d.breakfast !== null)) availableMealTypes.push("조식");
     if (allDays.some((d) => d.lunch !== null)) availableMealTypes.push("중식");
     if (allDays.some((d) => d.dinner !== null)) availableMealTypes.push("석식");
 

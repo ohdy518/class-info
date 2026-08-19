@@ -16,7 +16,7 @@ const todayStr = yyyymmdd(getNowInKst());
 type MealDoc = {
   _id: string;
   date: string; // YYYYMMDD
-  mealType: string; // 중식
+  mealType: string; // 조식 | 중식 | 석식
   dishes: string[];
   originInfo: string;
   calories: string | null;
@@ -39,18 +39,20 @@ const mealsQuery = useQuery(
 );
 
 const availableMealTypes = $derived(mealsQuery.data?.availableMealTypes ?? []);
-const hasDinner = $derived(availableMealTypes.includes("석식"));
 
 // If the selected meal type is no longer available (e.g. dinner data cleared
-// while it was selected), fall back to lunch so the view can't dead-end.
+// while it was selected), fall back to the first available type so the view
+// can't dead-end.
 $effect(() => {
   if (availableMealTypes.length > 0 && !availableMealTypes.includes(selectedMealType)) {
     selectedMealType = availableMealTypes[0];
   }
 });
 
-function mealKey(type: string): 'lunch' | 'dinner' {
-  return type === '중식' ? 'lunch' : 'dinner';
+function mealKey(type: string): 'breakfast' | 'lunch' | 'dinner' {
+  if (type === '조식') return 'breakfast';
+  if (type === '중식') return 'lunch';
+  return 'dinner';
 }
 
 function formatDateFull(dateStr: string): { year: number; month: number; day: number; weekday: string } {
@@ -101,14 +103,11 @@ function openMealDrawer(day: any) {
   {:else if !mealsQuery.data || availableMealTypes.length === 0}
     <EmptyState />
   {:else}
-    {#if hasDinner}
+    {#if availableMealTypes.length > 1}
       <div class="mb-3">
         <SegmentedControl
           bind:value={selectedMealType}
-          options={[
-            { value: '중식', label: '중식', event: 'Meal Type Toggle', eventProps: 'type=lunch' },
-            { value: '석식', label: '석식', event: 'Meal Type Toggle', eventProps: 'type=dinner' }
-          ]}
+          options={availableMealTypes.map((t) => ({ value: t, label: t, event: 'Meal Type Toggle', eventProps: `type=${t}` }))}
         />
       </div>
     {/if}

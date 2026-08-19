@@ -6,7 +6,7 @@ const crons = cronJobs();
 
 // Timetable + meals change at most a few times a day, so poll a handful of
 // times rather than hourly (was 96 external calls/day).
-const TIMETABLE_HOURS_UTC = [21, 1, 5, 9]; // ~06:00, 10:00, 14:00, 18:00 KST
+const TIMETABLE_HOURS_UTC = [21, 1, 5, 9, 13]; // ~06:00, 10:00, 14:00, 18:00 KST
 
 for (const hourUTC of TIMETABLE_HOURS_UTC) {
   crons.daily(

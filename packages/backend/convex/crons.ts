@@ -1,7 +1,7 @@
 import { cronJobs } from "convex/server";
 import { internal } from "./_generated/api";
 
-const SCHOOL_CODE = "7010208";
+const SCHOOL_CODE = "7531146";
 const crons = cronJobs();
 
 // Timetable + meals change at most a few times a day, so poll a handful of

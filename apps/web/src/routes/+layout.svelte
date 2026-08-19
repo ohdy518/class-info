@@ -29,7 +29,7 @@
 	<header class="sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border">
 		<div class="max-w-4xl mx-auto flex items-center justify-between gap-3 px-4 h-14">
 			<a href="/" class="shrink-0 pressable" aria-label="홈">
-				<span class="text-base sm:text-lg font-bold tracking-tight text-foreground">TimeforSchool</span>
+				<span class="text-base sm:text-lg font-bold tracking-tight text-foreground">1학년 6반</span>
 			</a>
 			<nav class="flex items-center gap-1 sm:gap-2 text-[15px]">
 				{#each navItems as item}
@@ -54,4 +54,4 @@
 	</main>
 
     <div aria-live="polite" aria-atomic="true" class="sr-only" id="aria-live-region"></div>
-	
+

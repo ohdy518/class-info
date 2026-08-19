@@ -80,15 +80,15 @@ function openMealDrawer(day: any) {
 </script>
 
 <svelte:head>
-  <title>급식 - 1학년 3반</title>
+  <title>급식 - 1학년 6반</title>
   <meta name="description" content="정확한 급식을 한 눈에 확인하세요. " />
-  <meta property="og:title" content="급식 - 1학년 3반" />
+  <meta property="og:title" content="급식 - 1학년 6반" />
   <meta property="og:description" content="정확한 급식을 한 눈에 확인하세요. " />
   <meta property="og:url" content="https://timefor.school/meals" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="TimeforSchool" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="급식 - 1학년 3반" />
+  <meta name="twitter:title" content="급식 - 1학년 6반" />
   <meta name="twitter:description" content="정확한 급식을 한 눈에 확인하세요. " />
   <meta name="robots" content="noindex" />
 </svelte:head>

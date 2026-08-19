@@ -144,15 +144,15 @@ function isToday(dateStr: string): boolean {
 </script>
 
 <svelte:head>
-	<title>오늘 - 1학년 3반</title>
+	<title>오늘 - 1학년 6반</title>
 	<meta name="description" content="오늘의 시간표, 급식, 공지를 한눈에 확인하세요." />
-	<meta property="og:title" content="오늘 - 1학년 3반" />
+	<meta property="og:title" content="오늘 - 1학년 6반" />
 	<meta property="og:description" content="오늘의 시간표, 급식, 공지를 한눈에 확인하세요." />
 	<meta property="og:url" content="https://timefor.school" />
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="TimeforSchool" />
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="오늘 - 1학년 3반" />
+	<meta name="twitter:title" content="오늘 - 1학년 6반" />
 	<meta name="twitter:description" content="오늘의 시간표, 급식, 공지를 한눈에 확인하세요." />
 </svelte:head>
 
@@ -190,7 +190,7 @@ function isToday(dateStr: string): boolean {
 			<div class="bg-card border border-border rounded-2xl p-4">
 				{#if displaySchedule.length === 0}
 					<div class="flex items-center justify-center py-8">
-						<p class="text-sm text-muted-foreground text-center">시간표가 없어요</p>
+						<p class="text-sm text-muted-foreground text-center">시간표가 없습니다.</p>
 					</div>
 				{:else}
 					<ol class="space-y-2.5">
@@ -221,7 +221,7 @@ function isToday(dateStr: string): boolean {
 					<div class="pr-4 sm:pr-6">
 						<p class="text-xs font-semibold text-muted-foreground mb-2">중식</p>
 						{#if !displayLunch}
-							<p class="text-sm text-muted-foreground">급식 정보가 없어요</p>
+							<p class="text-sm text-muted-foreground">급식 정보가 없습니다</p>
 						{:else}
 							<ul class="space-y-1.5">
 								{#each displayLunch.dishes as dish}
@@ -237,7 +237,7 @@ function isToday(dateStr: string): boolean {
 					<div class="border-l border-border pl-4 sm:pl-6">
 						<p class="text-xs font-semibold text-muted-foreground mb-2">석식</p>
 						{#if !displayDinner}
-							<p class="text-sm text-muted-foreground">급식 정보가 없어요</p>
+							<p class="text-sm text-muted-foreground">급식 정보가 없습니다.</p>
 						{:else}
 							<ul class="space-y-1.5">
 								{#each displayDinner.dishes as dish}
@@ -271,7 +271,7 @@ function isToday(dateStr: string): boolean {
 				</div>
 			{:else if !hasNotices}
 				<div class="bg-card border border-border rounded-2xl px-4 py-8 text-center">
-					<p class="text-sm text-muted-foreground">공지가 없어요</p>
+					<p class="text-sm text-muted-foreground">공지가 없습니다.</p>
 				</div>
 			{:else}
 				<div class="space-y-4">
@@ -308,7 +308,7 @@ function isToday(dateStr: string): boolean {
 			</div>
 			{#if upcomingEvents.length === 0}
 				<div class="bg-card border border-border rounded-2xl px-4 py-8 text-center">
-					<p class="text-sm text-muted-foreground">다가오는 일정이 없어요</p>
+					<p class="text-sm text-muted-foreground">다가오는 일정이 없습니다.</p>
 				</div>
 			{:else}
 				<div class="bg-card border border-border rounded-2xl overflow-hidden divide-y divide-border">

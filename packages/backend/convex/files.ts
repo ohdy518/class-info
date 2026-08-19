@@ -19,11 +19,11 @@ export const { generateUploadUrl, syncMetadata } = r2.clientApi({
   },
   onUpload: async (ctx, bucket, key) => {
     // Store file metadata in our database with custom domain URL
-    const url = `https://files.timefor.school/${key}`;
-    
+    const url = `https://files.timeforschool.ohdy.dev/${key}`;
+
     // Extract file info from key if needed
     const fileName = key.split('/').pop() || key;
-    
+
     await ctx.db.insert("files", {
       name: fileName,
       type: "unknown", // We'll set this from the client
@@ -91,13 +91,13 @@ export const updateFileMetadataByStorageId = mutation({
     if (!file) {
       throw new Error("File not found");
     }
-    
+
     await ctx.db.patch(file._id, {
       name,
       type,
       size,
     });
-    
+
     return file._id;
   },
 });

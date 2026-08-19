@@ -93,12 +93,12 @@ async function handleSubmit() {
 		...formData,
 		description: typeof formData.description === 'string' ? formData.description : ''
 	};
-	
+
 	if (!payload.title || !payload.subject || !payload.dueDate) {
 		alert('필수 항목을 모두 입력해주세요.');
 		return;
 	}
-	
+
 	try {
 		if ($editingNotice) {
 			await client.mutation(api.notices.update, { sessionToken, id: $editingNotice._id, ...payload });
@@ -136,23 +136,23 @@ const lastUpdatedTs = $derived.by(() => {
 </script>
 
 <svelte:head>
-	<title>관리자 페이지 - 1학년 3반 공지</title>
-	<meta name="description" content="1학년 3반 공지 관리자 페이지입니다. " />
+	<title>관리자 페이지 - 1학년 6반 공지</title>
+	<meta name="description" content="1학년 6반 공지 관리자 페이지입니다. " />
 
 	<!-- Open Graph -->
-	<meta property="og:title" content="관리자 페이지 - 1학년 3반 공지" />
-	<meta property="og:description" content="1학년 3반 공지 관리자 페이지입니다. " />
+	<meta property="og:title" content="관리자 페이지 - 1학년 6반 공지" />
+	<meta property="og:description" content="1학년 6반 공지 관리자 페이지입니다. " />
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="TimeforSchool" />
-	
+
 	<!-- Twitter Card -->
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="관리자 페이지 - 1학년 3반 공지" />
-	<meta name="twitter:description" content="1학년 3반 공지 관리자 페이지입니다. " />
-	
-	<!-- Additional meta tags -->	
+	<meta name="twitter:title" content="관리자 페이지 - 1학년 6반 공지" />
+	<meta name="twitter:description" content="1학년 6반 공지 관리자 페이지입니다. " />
+
+	<!-- Additional meta tags -->
 	<meta name="robots" content="noindex, nofollow" />
-	
+
 	<!-- Theme colors for iOS Safari -->
 	<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
 	<meta name="theme-color" content="#0f0f0f" media="(prefers-color-scheme: dark)" />

@@ -41,11 +41,11 @@ function getPeriodLabel(period: number): string {
 
 
 <svelte:head>
-	<title>시간표 - 1학년 3반</title>
+	<title>시간표 - 1학년 6반</title>
 	<meta name="description" content="정확한 시간표를 변경사항까지 한 번에 확인하세요. " />
 
 	<!-- Open Graph -->
-	<meta property="og:title" content="시간표 - 1학년 3반" />
+	<meta property="og:title" content="시간표 - 1학년 6반" />
 	<meta property="og:description" content="정확한 시간표를 변경사항까지 한 번에 확인하세요. " />
 	<meta property="og:url" content="https://timefor.school/timetable" />
 	<meta property="og:type" content="website" />
@@ -53,7 +53,7 @@ function getPeriodLabel(period: number): string {
 
 	<!-- Twitter Card -->
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="시간표 - 1학년 3반" />
+	<meta name="twitter:title" content="시간표 - 1학년 6반" />
 	<meta name="twitter:description" content="정확한 시간표를 변경사항까지 한 번에 확인하세요. " />
 	<meta name="robots" content="noindex" />
 </svelte:head>

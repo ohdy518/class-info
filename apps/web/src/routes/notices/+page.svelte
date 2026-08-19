@@ -19,11 +19,11 @@ const overview = useQuery(api.notices.overview, {}, () => ({
 </script>
 
 <svelte:head>
-	<title>공지 - 1학년 3반</title>
+	<title>공지 - 1학년 6반</title>
 	<meta name="description" content="수행평가, 숙제, 준비물 등 중요한 공지사항을 확인하세요." />
 
 	<!-- Open Graph -->
-	<meta property="og:title" content="공지 - 1학년 3반" />
+	<meta property="og:title" content="공지 - 1학년 6반" />
 	<meta property="og:description" content="수행평가, 숙제, 준비물 등 중요한 공지사항을 확인하세요." />
 	<meta property="og:url" content="https://timefor.school/notices" />
 	<meta property="og:type" content="website" />
@@ -31,7 +31,7 @@ const overview = useQuery(api.notices.overview, {}, () => ({
 
 	<!-- Twitter Card -->
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="공지 - 1학년 3반" />
+	<meta name="twitter:title" content="공지 - 1학년 6반" />
 	<meta name="twitter:description" content="수행평가, 숙제, 준비물 등 중요한 공지사항을 확인하세요." />
 </svelte:head>
 

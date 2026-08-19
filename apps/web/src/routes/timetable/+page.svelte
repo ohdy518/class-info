@@ -5,37 +5,23 @@ import LoadingState from '../../components/LoadingState.svelte';
 import ErrorState from '../../components/ErrorState.svelte';
 import EmptyState from '../../components/EmptyState.svelte';
 import HScroll from '../../components/HScroll.svelte';
-import SegmentedControl from '../../components/SegmentedControl.svelte';
-import { createBlurPulse } from '$lib/blurPulse.svelte';
 import type { PageData } from './$types.js';
 
 let { data }: { data: PageData } = $props();
 
-let selectedWeek = $state(0); // 0: this week, 1: next week
-
-const blur = createBlurPulse();
-$effect(() => { selectedWeek; blur.pulse(); });
-
 const timetableQuery = useQuery(
-	api.timetable.getByWeek,
-	() => ({ week: selectedWeek }),
-	() => ({
-		initialData: selectedWeek === 0 ? data.timetable : undefined,
-		keepPreviousData: true
-	})
+	api.timetable.get,
+	{},
+	() => ({ initialData: data.timetable })
 );
 
 const dayNames = ['월', '화', '수', '목', '금'];
 
-function getMaxPeriods(): number {
-	const tt = (timetableQuery.data?.timetable || []) as Array<Array<{ period: number }>>;
-	return tt.reduce((max: number, day) => Math.max(max, day.length), 0);
-}
+const periodCount = $derived(timetableQuery.data?.day_time?.length ?? 0);
 
 function getPeriodLabel(period: number): string {
 	const times = timetableQuery.data?.day_time || [];
-	const label = times[period - 1];
-	return label ? label.replace(/^.*\(([^)]+)\)$/, '$1') : "?";
+	return times[period - 1] ?? "?";
 }
 </script>
 
@@ -59,17 +45,6 @@ function getPeriodLabel(period: number): string {
 </svelte:head>
 
 <div class="max-w-4xl mx-auto px-4 pt-4 pb-1 sm:pt-5 sm:pb-0 sm:px-4">
-	<!-- Header: Week Selector -->
-	<div class="mb-3">
-		<SegmentedControl
-			bind:value={selectedWeek}
-			options={[
-				{ value: 0, label: '이번 주', event: 'Week Toggle', eventProps: 'week=this' },
-				{ value: 1, label: '다음 주', event: 'Week Toggle', eventProps: 'week=next' }
-			]}
-		/>
-	</div>
-
 	{#if timetableQuery.isLoading}
 		<LoadingState />
 	{:else if timetableQuery.error}
@@ -77,7 +52,7 @@ function getPeriodLabel(period: number): string {
 	{:else if !timetableQuery.data}
 		<EmptyState />
 	{:else}
-		<HScroll blurred={blur.blurred}>
+		<HScroll>
 				<table class="w-full min-w-[18rem] table-fixed border border-border border-collapse overflow-hidden rounded-2xl mx-auto">
 				<thead>
 					<tr class="bg-muted">
@@ -88,19 +63,19 @@ function getPeriodLabel(period: number): string {
 					</tr>
 				</thead>
 				<tbody>
-					{#each Array(getMaxPeriods()) as _, i}
+					{#each Array(periodCount) as _, i}
 						<tr>
 							<td class="px-0.5 py-3 sm:py-6 border border-border text-muted-foreground text-center bg-muted">
 								<div class="text-sm sm:text-lg font-semibold text-foreground whitespace-nowrap">{i + 1}교시</div>
 								<div class="text-[11px] sm:text-base text-muted-foreground tabular-nums leading-tight">{getPeriodLabel(i + 1)}</div>
 							</td>
 							{#each (timetableQuery.data?.timetable || []) as day}
-								<td class="border border-border py-3 sm:py-6 text-center {day[i]?.replaced ? 'bg-amber-100/70 dark:bg-amber-900/20' : 'bg-card'}">
-									{#if day[i]}
+								<td class="border border-border py-3 sm:py-6 text-center bg-card">
+									{#if day[i]?.subject}
 										<!-- Subject cell -->
 										<div class="flex items-center justify-center gap-2">
 											<div>
-												<span class="text-[15px] sm:text-xl font-semibold {day[i].replaced ? 'text-amber-700 dark:text-amber-300' : 'text-foreground'}">{day[i].subject}</span>
+												<span class="text-[15px] sm:text-xl font-semibold text-foreground">{day[i].subject}</span>
 											</div>
 										</div>
 										<div class="text-sm sm:text-base mt-0.5 font-medium text-muted-foreground">{day[i].teacher}</div>

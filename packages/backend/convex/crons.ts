@@ -4,23 +4,11 @@ import { internal } from "./_generated/api";
 const SCHOOL_CODE = "7531146";
 const crons = cronJobs();
 
-// Timetable + meals change at most a few times a day, so poll a handful of
-// times rather than hourly (was 96 external calls/day).
-const TIMETABLE_HOURS_UTC = [21, 1, 5, 9, 13]; // ~06:00, 10:00, 14:00, 18:00 KST
+// Meals change at most a few times a day, so poll a handful of times rather
+// than hourly (was 96 external calls/day).
+const SYNC_HOURS_UTC = [21, 1, 5, 9, 13]; // ~06:00, 10:00, 14:00, 18:00 KST
 
-for (const hourUTC of TIMETABLE_HOURS_UTC) {
-  crons.daily(
-    `fetch timetable - this week @${hourUTC}`,
-    { hourUTC, minuteUTC: 0 },
-    internal.timetable.fetchAndSave,
-    { grade: 1, classno: 3, week: 0, schoolcode: SCHOOL_CODE }
-  );
-  crons.daily(
-    `fetch timetable - next week @${hourUTC}`,
-    { hourUTC, minuteUTC: 1 },
-    internal.timetable.fetchAndSave,
-    { grade: 1, classno: 3, week: 1, schoolcode: SCHOOL_CODE }
-  );
+for (const hourUTC of SYNC_HOURS_UTC) {
   crons.daily(
     `fetch meals - this week @${hourUTC}`,
     { hourUTC, minuteUTC: 0 },

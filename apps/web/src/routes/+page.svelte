@@ -12,15 +12,6 @@ const noticesQuery = useQuery(api.notices.overview, {}, () => ({
 	keepPreviousData: true,
 }));
 
-// ── Date helpers ──────────────────────────────────────────────────────────────
-function getMondayTime(d: Date): number {
-	const copy = new Date(d);
-	const day = copy.getDay();
-	copy.setDate(copy.getDate() - (day === 0 ? 6 : day - 1));
-	copy.setHours(0, 0, 0, 0);
-	return copy.getTime();
-}
-
 const kst = getNowInKst();
 const todayYyyymmdd = yyyymmdd(kst);
 const todayMonth = kst.getMonth() + 1;
@@ -49,21 +40,9 @@ function findNextSchoolDay(): Date {
 	return d;
 }
 
-// The day whose timetable + meal we display
+// The day whose meal we display
 const displayDay = isSchoolDay(kst) ? kst : findNextSchoolDay();
 const displayDayStr = yyyymmdd(displayDay);
-const displayDayIndex = displayDay.getDay() - 1; // 0=Mon…4=Fri
-
-// Which week's timetable to use. We only hold this-week and next-week data, so
-// map by whole-week offset; anything further out has no timetable to show.
-const weekOffset = Math.round((getMondayTime(displayDay) - getMondayTime(kst)) / (7 * 24 * 60 * 60 * 1000));
-const displayTimetableData =
-	weekOffset === 0 ? data.timetable : weekOffset === 1 ? data.nextWeekTimetable : undefined;
-const displaySchedule = (
-	displayDayIndex >= 0 && displayDayIndex <= 4
-		? (displayTimetableData?.timetable?.[displayDayIndex] ?? [])
-		: []
-) as Array<{ period: number; subject: string; teacher: string; replaced: boolean }>;
 
 // Which meal day to show
 const allMealDays = [...(data.meals?.thisWeek?.days ?? []), ...(data.meals?.nextWeek?.days ?? [])];
@@ -74,13 +53,30 @@ const displayDinner = displayMealDay?.dinner ?? null;
 // Card title prefix: "" | "내일 " | "5월 3일 "
 const tomorrowStr = yyyymmdd(new Date(kst.getTime() + 24 * 60 * 60 * 1000));
 const displayWeekday = WEEKDAYS_KR[displayDay.getDay()];
-const cardDayLabel = (() => {
-	if (displayDayStr === todayYyyymmdd) return '';
-	if (displayDayStr === tomorrowStr) return `내일 (${displayWeekday}) `;
-	const m = Number(displayDayStr.slice(4, 6));
-	const d = Number(displayDayStr.slice(6, 8));
-	return `${m}월 ${d}일 (${displayWeekday}) `;
-})();
+function formatCardDayLabel(dateStr: string, weekday: string): string {
+	if (dateStr === todayYyyymmdd) return '';
+	if (dateStr === tomorrowStr) return `내일(${weekday}) `;
+	const m = Number(dateStr.slice(4, 6));
+	const d = Number(dateStr.slice(6, 8));
+	return `${m}월 ${d}일 (${weekday}) `;
+}
+const cardDayLabel = formatCardDayLabel(displayDayStr, displayWeekday);
+
+// The day whose timetable we display — school is over by 18:00 KST, so from
+// then on show the next school day's schedule instead of today's.
+const SCHOOL_DAY_END_HOUR_KST = 18;
+const isPastSchoolHours = kst.getHours() >= SCHOOL_DAY_END_HOUR_KST;
+const timetableDisplayDay = isSchoolDay(kst) && !isPastSchoolHours ? kst : findNextSchoolDay();
+const timetableDisplayDayStr = yyyymmdd(timetableDisplayDay);
+const timetableDisplayDayIndex = timetableDisplayDay.getDay() - 1; // 0=Mon…4=Fri
+const timetableWeekday = WEEKDAYS_KR[timetableDisplayDay.getDay()];
+const timetableCardDayLabel = formatCardDayLabel(timetableDisplayDayStr, timetableWeekday);
+
+const displaySchedule = (
+	timetableDisplayDayIndex >= 0 && timetableDisplayDayIndex <= 4
+		? (data.timetable?.timetable?.[timetableDisplayDayIndex] ?? []).filter((s) => s.subject)
+		: []
+) as Array<{ period: number; subject: string; teacher: string }>;
 
 // ── Events ────────────────────────────────────────────────────────────────────
 const in7days = yyyymmdd(new Date(kst.getTime() + 7 * 24 * 60 * 60 * 1000));
@@ -184,7 +180,7 @@ function isToday(dateStr: string): boolean {
 		<!-- Timetable -->
 		<section class="sm:col-span-1">
 			<div class="flex items-baseline justify-between mb-2.5">
-				<h2 class="text-sm font-semibold text-muted-foreground">{cardDayLabel}시간표</h2>
+				<h2 class="text-sm font-semibold text-muted-foreground">{timetableCardDayLabel}시간표</h2>
 				<a href="/timetable" aria-label="시간표 모두 보기" class="text-xs font-medium text-muted-foreground transition-colors duration-100 pointer:hover:text-foreground">모두 보기 <span aria-hidden="true">→</span></a>
 			</div>
 			<div class="bg-card border border-border rounded-2xl p-4">
@@ -197,7 +193,7 @@ function isToday(dateStr: string): boolean {
 						{#each displaySchedule as slot}
 							<li class="flex items-center gap-3">
 								<span class="text-sm tabular-nums text-muted-foreground shrink-0 w-4 text-center">{slot.period}</span>
-								<span class="text-[15px] font-semibold leading-snug truncate min-w-0 flex-1 {slot.replaced ? 'text-amber-700 dark:text-amber-400' : 'text-foreground'}">{slot.subject}</span>
+								<span class="text-[15px] font-semibold leading-snug truncate min-w-0 flex-1 text-foreground">{slot.subject}</span>
 								{#if slot.teacher}
 									<span class="text-xs text-muted-foreground shrink-0">{slot.teacher}</span>
 								{/if}

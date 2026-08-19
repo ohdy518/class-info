@@ -11,10 +11,9 @@ export const load = (async () => {
 	// In December, upcoming events can spill into next January, so pull both years.
 	const years = kstNow.getMonth() === 11 ? [year, year + 1] : [year];
 
-	const [noticesOverview, timetable, nextWeekTimetable, meals, ...eventPairs] = await Promise.all([
+	const [noticesOverview, timetable, meals, ...eventPairs] = await Promise.all([
 		client.query(api.notices.overview, {}),
-		client.query(api.timetable.getByWeek, { week: 0 }),
-		client.query(api.timetable.getByWeek, { week: 1 }),
+		client.query(api.timetable.get, {}),
 		client.query(api.meals.getTwoWeeks, {}),
 		...years.flatMap((y) => [
 			client.query(api.schedule.getSchoolEventsByYear, { year: String(y) }).catch(() => []),
@@ -29,5 +28,5 @@ export const load = (async () => {
 		customEvents.push(...(eventPairs[i + 1] ?? []));
 	}
 
-	return { noticesOverview, timetable, nextWeekTimetable, meals, schoolEvents, customEvents };
+	return { noticesOverview, timetable, meals, schoolEvents, customEvents };
 }) satisfies PageServerLoad;

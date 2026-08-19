@@ -1,11 +1,17 @@
-import { internalAction, internalMutation, query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
+import { requireAdmin } from "./auth";
 
-export const upsert = internalMutation({
+export const get = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("timetables").first();
+  },
+});
+
+export const save = mutation({
   args: {
-    week: v.number(),
+    sessionToken: v.string(),
     day_time: v.array(v.string()),
     timetable: v.array(
       v.array(
@@ -13,96 +19,28 @@ export const upsert = internalMutation({
           period: v.number(),
           subject: v.string(),
           teacher: v.string(),
-          replaced: v.boolean(),
-          original: v.union(
-            v.null(),
-            v.object({ period: v.number(), subject: v.string(), teacher: v.string() })
-          ),
         })
       )
     ),
-    update_date: v.string(),
   },
-  handler: async (
-    ctx,
-    { week, day_time, timetable, update_date }
-  ): Promise<Id<"timetables">> => {
-    const existing = await ctx.db
-      .query("timetables")
-      .withIndex("by_week", (q) => q.eq("week", week))
-      .first();
+  handler: async (ctx, { sessionToken, day_time, timetable }) => {
+    await requireAdmin(ctx, sessionToken);
 
+    if (timetable.length !== 5) {
+      throw new Error("timetable must have exactly 5 day columns (Mon–Fri)");
+    }
+    const periodCount = day_time.length;
+    for (const day of timetable) {
+      if (day.length !== periodCount) {
+        throw new Error("every day must have the same number of periods as day_time");
+      }
+    }
+
+    const existing = await ctx.db.query("timetables").first();
     if (existing) {
-      await ctx.db.patch(existing._id, { day_time, timetable, update_date, week, editedAt: Date.now() });
-      console.log(`[timetable.upsert] updated week=${week}`);
+      await ctx.db.patch(existing._id, { day_time, timetable, editedAt: Date.now() });
       return existing._id;
     }
-
-    const id = await ctx.db.insert("timetables", { day_time, timetable, update_date, week, editedAt: Date.now() });
-    console.log(`[timetable.upsert] inserted week=${week}`);
-    return id;
+    return await ctx.db.insert("timetables", { day_time, timetable, editedAt: Date.now() });
   },
 });
-
-export const fetchAndSave = internalAction({
-  args: {
-    grade: v.number(),
-    classno: v.number(),
-    week: v.number(),
-    schoolcode: v.string(),
-  },
-  handler: async (
-    ctx,
-    { grade, classno, week, schoolcode }
-  ): Promise<Id<"timetables">> => {
-    const url = `https://api.timefor.school/timetable?grade=${encodeURIComponent(
-      String(grade)
-    )}&classno=${encodeURIComponent(String(classno))}&week=${encodeURIComponent(
-      String(week)
-    )}&schoolcode=${encodeURIComponent(schoolcode)}`;
-
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
-    if (!res.ok) {
-      throw new Error(`Failed to fetch timetable: ${res.status} ${res.statusText}`);
-    }
-    const data: {
-      day_time: string[];
-      timetable: Array<
-        Array<{
-          period: number;
-          subject: string;
-          teacher: string;
-          replaced: boolean;
-          original: null | { period: number; subject: string; teacher: string };
-        }>
-      >;
-      update_date: string;
-    } = await res.json();
-
-    // Basic shape validation
-    if (!Array.isArray(data.day_time) || !Array.isArray(data.timetable)) {
-      throw new Error("Unexpected timetable payload shape");
-    }
-
-    console.log(`[timetable.fetchAndSave] grade=${grade} class=${classno} week=${week}`);
-    const id = await ctx.runMutation(internal.timetable.upsert, {
-      week,
-      day_time: data.day_time,
-      timetable: data.timetable,
-      update_date: data.update_date,
-    });
-    return id;
-  },
-});
-
-export const getByWeek = query({
-  args: { week: v.number() },
-  handler: async (ctx, { week }) => {
-    return await ctx.db
-      .query("timetables")
-      .withIndex("by_week", (q) => q.eq("week", week))
-      .first();
-  },
-});
-
-

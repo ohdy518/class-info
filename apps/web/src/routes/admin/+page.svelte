@@ -5,6 +5,7 @@ import type { Id } from "@class-info/backend/convex/_generated/dataModel";
 import { writable } from 'svelte/store';
 import { enhance } from '$app/forms';
 import FileUpload from '../../components/FileUpload.svelte';
+import SegmentedControl from '../../components/SegmentedControl.svelte';
 import { getTypeColor } from '$lib/utils';
 import type { PageData, ActionData } from './$types';
 
@@ -13,6 +14,9 @@ const client = useConvexClient();
 
 // Bearer token for privileged mutations; present only when authenticated.
 const sessionToken = $derived(data.sessionToken ?? '');
+
+type AdminTab = 'notices' | 'timetable';
+let activeTab = $state<AdminTab>('notices');
 
 const showForm = writable(false);
 const editingNotice = writable<any>(null);
@@ -133,6 +137,76 @@ const lastUpdatedTs = $derived.by(() => {
 		.filter((t: any): t is number => typeof t === 'number');
 	return ts.length > 0 ? Math.max(...ts) : null;
 });
+
+// ── Timetable editor ─────────────────────────────────────────────────────────
+const timetableQuery = useQuery(api.timetable.get, {});
+
+type TimetableCell = { subject: string; teacher: string };
+type PeriodRow = { timeLabel: string; cells: TimetableCell[] }; // cells[0..4] = Mon..Fri
+
+function emptyCells(): TimetableCell[] {
+	return Array.from({ length: 5 }, () => ({ subject: '', teacher: '' }));
+}
+
+function defaultPeriodRows(n: number): PeriodRow[] {
+	return Array.from({ length: n }, () => ({ timeLabel: '', cells: emptyCells() }));
+}
+
+let periodRows = $state<PeriodRow[]>([]);
+let timetableLoadedFromServer = $state(false);
+
+// Seed the editor from server data once; re-seeding on every reactive query
+// update would clobber in-progress edits.
+$effect(() => {
+	if (timetableLoadedFromServer || timetableQuery.isLoading) return;
+	const t = timetableQuery.data;
+	periodRows = t
+		? t.day_time.map((timeLabel, i) => ({
+				timeLabel,
+				cells: t.timetable.map((day) => ({
+					subject: day[i]?.subject ?? '',
+					teacher: day[i]?.teacher ?? ''
+				}))
+			}))
+		: defaultPeriodRows(7);
+	timetableLoadedFromServer = true;
+});
+
+function setPeriodCount(n: number) {
+	n = Math.max(1, Math.min(12, Math.floor(n) || 1));
+	if (n === periodRows.length) return;
+	if (n > periodRows.length) {
+		periodRows = [
+			...periodRows,
+			...Array.from({ length: n - periodRows.length }, () => ({ timeLabel: '', cells: emptyCells() }))
+		];
+	} else {
+		periodRows = periodRows.slice(0, n);
+	}
+}
+
+let timetableSaving = $state(false);
+let timetableSaveError = $state<string | null>(null);
+
+async function saveTimetable() {
+	timetableSaveError = null;
+	timetableSaving = true;
+	try {
+		const day_time = periodRows.map((r) => r.timeLabel);
+		const timetable = [0, 1, 2, 3, 4].map((dayIdx) =>
+			periodRows.map((r, periodIdx) => ({
+				period: periodIdx + 1,
+				subject: r.cells[dayIdx].subject,
+				teacher: r.cells[dayIdx].teacher
+			}))
+		);
+		await client.mutation(api.timetable.save, { sessionToken, day_time, timetable });
+	} catch (error) {
+		timetableSaveError = '저장 중 오류가 발생했습니다.';
+	} finally {
+		timetableSaving = false;
+	}
+}
 </script>
 
 <svelte:head>
@@ -200,24 +274,38 @@ const lastUpdatedTs = $derived.by(() => {
 {:else}
 	<!-- Admin Panel -->
 	<div class="min-h-screen">
-		<div class="max-w-4xl mx-auto px-4 pt-5 pb-4">
-		<!-- Header -->
-		<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5">
-			<div class="flex gap-2">
-				<button
-					onclick={() => showForm.set(!$showForm)}
-					class="pressable-lg rounded-full px-4 font-medium py-2 bg-primary text-primary-foreground text-sm transition-opacity pointer:hover:opacity-90 text-center"
-				>
-					{$showForm ? '취소' : '새 알림 추가'}
-				</button>
+		<div class="max-w-4xl mx-auto px-4 pt-5">
+			<!-- Header -->
+			<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5">
+				<SegmentedControl
+					bind:value={activeTab}
+					options={[
+						{ value: 'notices', label: '공지' },
+						{ value: 'timetable', label: '시간표' }
+					]}
+				/>
 
-				<form method="POST" action="?/logout" use:enhance class="inline">
-					<button type="submit" class="pressable-lg rounded-full px-4 py-2 font-medium border border-border text-sm text-foreground transition-colors pointer:hover:bg-muted text-center w-full sm:w-auto">
-						로그아웃
-					</button>
-				</form>
+				<div class="flex gap-2">
+					{#if activeTab === 'notices'}
+						<button
+							onclick={() => showForm.set(!$showForm)}
+							class="pressable-lg rounded-full px-4 font-medium py-2 bg-primary text-primary-foreground text-sm transition-opacity pointer:hover:opacity-90 text-center"
+						>
+							{$showForm ? '취소' : '새 알림 추가'}
+						</button>
+					{/if}
+
+					<form method="POST" action="?/logout" use:enhance class="inline">
+						<button type="submit" class="pressable-lg rounded-full px-4 py-2 font-medium border border-border text-sm text-foreground transition-colors pointer:hover:bg-muted text-center w-full sm:w-auto">
+							로그아웃
+						</button>
+					</form>
+				</div>
 			</div>
 		</div>
+
+	{#if activeTab === 'notices'}
+		<div class="max-w-4xl mx-auto px-4 pb-4">
 
 		<!-- Form -->
 		{#if $showForm}
@@ -429,5 +517,96 @@ const lastUpdatedTs = $derived.by(() => {
 			{/if}
 		</div>
 	</div>
+	{:else}
+		<!-- Timetable editor -->
+		<div class="max-w-4xl mx-auto px-4 pb-4">
+			<div class="bg-card border border-border rounded-2xl p-4 sm:p-5 mb-6">
+				<h2 class="text-lg font-semibold tracking-tight mb-4 text-foreground">시간표 편집</h2>
+
+				<div class="mb-4 flex items-center gap-3">
+					<label for="period-count" class="text-sm font-medium text-muted-foreground">교시 수</label>
+					<input
+						id="period-count"
+						type="number"
+						min="1"
+						max="12"
+						value={periodRows.length}
+						onchange={(e) => setPeriodCount(Number((e.target as HTMLInputElement).value))}
+						class="w-20 h-10 px-3 rounded-xl border border-border text-base bg-muted text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+					/>
+				</div>
+
+				<div class="overflow-x-auto">
+					<table class="w-full min-w-[40rem] border-collapse">
+						<thead>
+							<tr>
+								<th class="text-left text-xs font-semibold text-muted-foreground px-2 py-1 w-32">시간</th>
+								{#each ['월', '화', '수', '목', '금'] as name}
+									<th class="text-center text-xs font-semibold text-muted-foreground px-2 py-1">{name}</th>
+								{/each}
+							</tr>
+						</thead>
+						<tbody>
+							{#each periodRows as row, i}
+								<tr>
+									<td class="align-top px-1 py-1.5">
+										<div class="text-xs text-muted-foreground mb-1">{i + 1}교시</div>
+										<input
+											type="text"
+											bind:value={row.timeLabel}
+											placeholder="09:00~09:50"
+											class="w-full h-9 px-2 rounded-lg border border-border text-sm bg-muted text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+										/>
+									</td>
+									{#each row.cells as cell}
+										<td class="align-top px-1 py-1.5">
+											<input
+												type="text"
+												bind:value={cell.subject}
+												placeholder="과목"
+												class="w-full h-9 px-2 mb-1 rounded-lg border border-border text-sm bg-muted text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+											/>
+											<input
+												type="text"
+												bind:value={cell.teacher}
+												placeholder="교사"
+												class="w-full h-9 px-2 rounded-lg border border-border text-sm bg-muted text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+											/>
+										</td>
+									{/each}
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+
+				{#if timetableSaveError}
+					<div class="mt-4 text-destructive text-sm">{timetableSaveError}</div>
+				{/if}
+
+				<div class="flex gap-2 mt-4">
+					<button
+						onclick={saveTimetable}
+						disabled={timetableSaving}
+						class="pressable-lg rounded-full px-5 font-medium py-2.5 bg-primary text-primary-foreground text-sm transition-opacity pointer:hover:opacity-90 disabled:opacity-50"
+					>
+						{timetableSaving ? '저장 중...' : '저장'}
+					</button>
+				</div>
+			</div>
+
+			{#if timetableQuery.data}
+				<p class="text-xs text-muted-foreground pb-6">
+					마지막 편집: {new Date(timetableQuery.data.editedAt).toLocaleString('ko-KR', {
+						year: 'numeric',
+						month: 'long',
+						day: 'numeric',
+						hour: '2-digit',
+						minute: '2-digit'
+					})}
+				</p>
+			{/if}
+		</div>
+	{/if}
 </div>
 {/if}

@@ -24,30 +24,21 @@ export default defineSchema({
   }).index("by_storage_id", ["storageId"]),
 
 
+  // Single manually-edited timetable (no external sync, no per-week rows —
+  // this table only ever holds one document).
   timetables: defineTable({
-    day_time: v.array(v.string()),
-    timetable: v.array(
+    day_time: v.array(v.string()), // one label per period, e.g. "09:00~09:50"
+    timetable: v.array( // exactly 5 entries, Mon..Fri, each same length as day_time
       v.array(
         v.object({
           period: v.number(),
-          subject: v.string(),
+          subject: v.string(), // "" = no class
           teacher: v.string(),
-          replaced: v.boolean(),
-          original: v.union(
-            v.null(),
-            v.object({
-              period: v.number(),
-              subject: v.string(),
-              teacher: v.string(),
-            })
-          ),
         })
       )
     ),
-    update_date: v.string(),
-    week: v.number(),
     editedAt: v.number(),
-  }).index("by_week", ["week"]),
+  }),
   
   settings: defineTable({
     key: v.string(),

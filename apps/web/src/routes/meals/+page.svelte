@@ -66,7 +66,7 @@ function formatDateFull(dateStr: string): { year: number; month: number; day: nu
 
 function formatDateKorean(dateStr: string): string {
   const { month: m, day: d, weekday } = formatDateFull(dateStr);
-  return `${m}/${d} (${weekday})`;
+  return `${m}/${d}(${weekday})`;
 }
 
 // ── Meal drawer ───────────────────────────────────────────────────────────────
@@ -137,7 +137,7 @@ function openMealDrawer(day: any) {
                     {/each}
                   </ul>
                 {:else}
-                  <p class="mt-2.5 text-sm text-muted-foreground">급식 정보가 없습니다</p>
+                  <p class="mt-2.5 text-sm text-muted-foreground">급식 정보가 없습니다.</p>
                 {/if}
               </div>
               <div class="mt-2 min-h-[1.25rem] flex items-end">

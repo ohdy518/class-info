@@ -120,7 +120,7 @@ function toDisplayDate(due: Date, today: Date): { displayDate: string; isToday: 
   if (isToday) return { displayDate: '오늘', isToday: true };
   const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
   if (due.toDateString() === tomorrow.toDateString()) return { displayDate: '내일', isToday: false };
-  return { displayDate: `${due.getMonth() + 1}/${due.getDate()} (${weekdayKr(due)})`, isToday: false };
+  return { displayDate: `${due.getMonth() + 1}/${due.getDate()}(${weekdayKr(due)})`, isToday: false };
 }
 
 function groupByDay(rows: Doc<"notices">[], today: Date): DayGroup[] {

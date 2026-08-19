@@ -2,6 +2,7 @@
 import { useQuery } from 'convex-svelte';
 import { api } from "@class-info/backend/convex/_generated/api";
 import NoticeCard from '../components/NoticeCard.svelte';
+import CreatorThanks from '../components/CreatorThanks.svelte';
 import { getNowInKst, yyyymmdd, WEEKDAYS_KR } from '$lib/date';
 import type { PageData } from './$types.js';
 
@@ -322,5 +323,7 @@ function isToday(dateStr: string): boolean {
 		</section>
 
 	</div>
+
+	<CreatorThanks />
 
 </div>

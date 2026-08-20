@@ -26,3 +26,17 @@ export function toYyyymmdd(year: number, month: number, day: number): string {
 export function weekdayKr(d: Date): string {
 	return WEEKDAYS_KR[d.getDay()];
 }
+
+// Parse a YYYYMMDD string into a local Date at midnight.
+export function parseYyyymmdd(s: string): Date {
+	const y = Number(s.slice(0, 4));
+	const m = Number(s.slice(4, 6));
+	const d = Number(s.slice(6, 8));
+	return new Date(y, m - 1, d);
+}
+
+// Whole-day difference (to - from), e.g. daysBetween('20260820','20260827') === 7.
+// Korea has no DST, so a plain ms-diff between local-midnight dates is safe here.
+export function daysBetween(fromYyyymmdd: string, toYyyymmdd: string): number {
+	return Math.round((parseYyyymmdd(toYyyymmdd).getTime() - parseYyyymmdd(fromYyyymmdd).getTime()) / 86_400_000);
+}

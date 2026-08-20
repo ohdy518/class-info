@@ -45,6 +45,13 @@ export default defineSchema({
     value: v.string(),
   }).index("by_key", ["key"]),
 
+  ddays: defineTable({
+    title: v.string(),
+    targetDate: v.string(), // YYYYMMDD
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_target_date", ["targetDate"]),
+
   // Admin auth sessions — bearer tokens issued after a successful PIN login.
   sessions: defineTable({
     token: v.string(),

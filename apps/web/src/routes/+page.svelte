@@ -3,13 +3,18 @@ import { useQuery } from 'convex-svelte';
 import { api } from "@class-info/backend/convex/_generated/api";
 import NoticeCard from '../components/NoticeCard.svelte';
 import CreatorThanks from '../components/CreatorThanks.svelte';
-import { getNowInKst, yyyymmdd, WEEKDAYS_KR } from '$lib/date';
+import { getNowInKst, yyyymmdd, daysBetween, WEEKDAYS_KR } from '$lib/date';
 import type { PageData } from './$types.js';
 
 let { data }: { data: PageData } = $props();
 
 const noticesQuery = useQuery(api.notices.overview, {}, () => ({
 	initialData: data.noticesOverview,
+	keepPreviousData: true,
+}));
+
+const ddaysQuery = useQuery(api.ddays.list, {}, () => ({
+	initialData: data.ddays,
 	keepPreviousData: true,
 }));
 
@@ -94,6 +99,14 @@ const upcomingEvents = $derived(
 	allEvents.filter((e: any) => e.date >= todayYyyymmdd && e.date <= in7days)
 );
 
+// ── D-Day ─────────────────────────────────────────────────────────────────────
+const upcomingDday = $derived.by(() => {
+	const all = (ddaysQuery.data ?? []).filter((e: any) => e.targetDate >= todayYyyymmdd);
+	if (all.length === 0) return null;
+	return [...all].sort((a: any, b: any) => a.targetDate.localeCompare(b.targetDate))[0];
+});
+const ddayCount = $derived(upcomingDday ? daysBetween(todayYyyymmdd, upcomingDday.targetDate) : null);
+
 // ── Notices ───────────────────────────────────────────────────────────────────
 const currentGroups = $derived(noticesQuery.data?.currentGroups ?? []);
 const noticePreview = $derived(currentGroups.slice(0, 3));
@@ -155,14 +168,19 @@ function isToday(dateStr: string): boolean {
 
 <div class="max-w-4xl mx-auto px-4 pt-6 pb-16 sm:pt-8">
 
-	<!-- ── Date hero ───────────────────────────────────────────────────────── -->
+<!-- ── Date hero ───────────────────────────────────────────────────────── -->
 	<header class="flex flex-wrap items-baseline justify-between gap-x-5 gap-y-1.5 mb-6 sm:mb-7">
 		<h1 class="flex items-baseline gap-2">
 			<span class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{todayMonth}월 {todayDate}일</span>
 			<span class="text-base sm:text-lg font-medium text-muted-foreground">{todayWeekday}요일</span>
 		</h1>
-		{#if todayEvents.length > 0}
+		{#if todayEvents.length > 0 || upcomingDday}
 			<div class="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-base sm:text-lg">
+				{#if upcomingDday}
+					<span class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-semibold">
+						{ddayCount === 0 ? `${upcomingDday.title} D-DAY` : `${upcomingDday.title}까지 ${ddayCount}일`}
+					</span>
+				{/if}
 				{#each todayEvents as event}
 					<span class="inline-flex items-baseline gap-1.5">
 						<span class="font-semibold text-foreground">{event.title}</span>

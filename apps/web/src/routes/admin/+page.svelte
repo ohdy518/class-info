@@ -7,6 +7,7 @@ import { enhance } from '$app/forms';
 import FileUpload from '../../components/FileUpload.svelte';
 import SegmentedControl from '../../components/SegmentedControl.svelte';
 import { getTypeColor } from '$lib/utils';
+import { getNowInKst, yyyymmdd, daysBetween } from '$lib/date';
 import type { PageData, ActionData } from './$types';
 
 let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -15,7 +16,9 @@ const client = useConvexClient();
 // Bearer token for privileged mutations; present only when authenticated.
 const sessionToken = $derived(data.sessionToken ?? '');
 
-type AdminTab = 'notices' | 'timetable';
+const todayYyyymmdd = yyyymmdd(getNowInKst());
+
+type AdminTab = 'notices' | 'timetable' | 'dday';
 let activeTab = $state<AdminTab>('notices');
 
 const showForm = writable(false);
@@ -207,6 +210,69 @@ async function saveTimetable() {
 		timetableSaving = false;
 	}
 }
+
+// ── D-Day editor ─────────────────────────────────────────────────────────────
+const ddaysQuery = useQuery(api.ddays.list, {});
+
+const showDdayForm = writable(false);
+const editingDday = writable<any>(null);
+const ddayForm = writable({ title: '', targetDate: '' }); // targetDate as YYYY-MM-DD for <input type="date">
+
+function resetDdayForm() {
+	ddayForm.set({ title: '', targetDate: '' });
+	editingDday.set(null);
+	showDdayForm.set(false);
+}
+
+function editDday(entry: any) {
+	ddayForm.set({
+		title: entry.title,
+		targetDate: `${entry.targetDate.slice(0, 4)}-${entry.targetDate.slice(4, 6)}-${entry.targetDate.slice(6, 8)}`
+	});
+	editingDday.set(entry);
+	showDdayForm.set(true);
+	setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+}
+
+async function handleDdaySubmit() {
+	const formData = $ddayForm;
+	if (!formData.title || !formData.targetDate) {
+		alert('필수 항목을 모두 입력해주세요.');
+		return;
+	}
+	const targetDate = formData.targetDate.replaceAll('-', '');
+	try {
+		if ($editingDday) {
+			await client.mutation(api.ddays.update, { sessionToken, id: $editingDday._id, title: formData.title, targetDate });
+		} else {
+			await client.mutation(api.ddays.create, { sessionToken, title: formData.title, targetDate });
+		}
+		resetDdayForm();
+	} catch (error) {
+		alert('저장 중 오류가 발생했습니다.');
+	}
+}
+
+async function handleDdayDelete(entry: any) {
+	if (confirm('정말 삭제하시겠습니까?')) {
+		try {
+			await client.mutation(api.ddays.remove, { sessionToken, id: entry._id });
+		} catch (error) {
+			alert('삭제 중 오류가 발생했습니다.');
+		}
+	}
+}
+
+const sortedDdays = $derived(
+	[...(ddaysQuery.data ?? [])].sort((a: any, b: any) => a.targetDate.localeCompare(b.targetDate))
+);
+
+function ddayStatusLabel(targetDate: string): string {
+	const n = daysBetween(todayYyyymmdd, targetDate);
+	if (n < 0) return `D+${-n}`;
+	if (n === 0) return 'D-DAY';
+	return `D-${n}`;
+}
 </script>
 
 <svelte:head>
@@ -282,7 +348,8 @@ async function saveTimetable() {
 					bind:value={activeTab}
 					options={[
 						{ value: 'notices', label: '공지' },
-						{ value: 'timetable', label: '시간표' }
+						{ value: 'timetable', label: '시간표' },
+						{ value: 'dday', label: 'D-Day' }
 					]}
 				/>
 
@@ -293,6 +360,13 @@ async function saveTimetable() {
 							class="pressable-lg rounded-full px-4 font-medium py-2 bg-primary text-primary-foreground text-sm transition-opacity pointer:hover:opacity-90 text-center"
 						>
 							{$showForm ? '취소' : '새 알림 추가'}
+						</button>
+					{:else if activeTab === 'dday'}
+						<button
+							onclick={() => showDdayForm.set(!$showDdayForm)}
+							class="pressable-lg rounded-full px-4 font-medium py-2 bg-primary text-primary-foreground text-sm transition-opacity pointer:hover:opacity-90 text-center"
+						>
+							{$showDdayForm ? '취소' : '새 D-Day 추가'}
 						</button>
 					{/if}
 
@@ -518,7 +592,7 @@ async function saveTimetable() {
 			{/if}
 		</div>
 	</div>
-	{:else}
+	{:else if activeTab === 'timetable'}
 		<!-- Timetable editor -->
 		<div class="max-w-4xl mx-auto px-4 pb-4">
 			<div class="bg-card border border-border rounded-2xl p-4 sm:p-5 mb-6">
@@ -606,6 +680,86 @@ async function saveTimetable() {
 						minute: '2-digit'
 					})}
 				</p>
+			{/if}
+		</div>
+	{:else if activeTab === 'dday'}
+		<!-- D-Day editor -->
+		<div class="max-w-4xl mx-auto px-4 pb-4">
+			{#if $showDdayForm}
+				<div class="bg-card border border-border rounded-2xl p-4 sm:p-5 mb-6">
+					<h2 class="text-lg font-semibold tracking-tight mb-4 text-foreground">
+						{$editingDday ? 'D-Day 수정' : '새 D-Day 추가'}
+					</h2>
+					<div class="grid gap-4">
+						<div>
+							<label for="dday-title" class="block text-sm font-medium mb-1.5 text-muted-foreground">제목 *</label>
+							<input
+								id="dday-title"
+								type="text"
+								bind:value={$ddayForm.title}
+								class="w-full h-11 px-3.5 rounded-xl border border-border text-base bg-muted text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50 placeholder:text-muted-foreground transition-shadow break-words"
+								placeholder="예: 기말고사"
+							/>
+						</div>
+						<div>
+							<label for="dday-date" class="block text-sm font-medium mb-1.5 text-muted-foreground">목표일 *</label>
+							<input
+								id="dday-date"
+								type="date"
+								bind:value={$ddayForm.targetDate}
+								class="w-full h-11 px-3.5 rounded-xl border border-border text-base bg-muted text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+							/>
+						</div>
+						<div class="flex gap-2">
+							<button
+								onclick={handleDdaySubmit}
+								class="pressable-lg rounded-full px-5 font-medium py-2.5 bg-primary text-primary-foreground text-sm transition-opacity pointer:hover:opacity-90"
+							>
+								{$editingDday ? '수정' : '추가'}
+							</button>
+							<button
+								onclick={resetDdayForm}
+								class="pressable-lg rounded-full px-5 py-2.5 font-medium border border-border text-sm text-foreground transition-colors pointer:hover:bg-muted"
+							>
+								취소
+							</button>
+						</div>
+					</div>
+				</div>
+			{/if}
+
+			{#if ddaysQuery.isLoading}
+				<div class="text-center py-8 text-muted-foreground">로딩 중...</div>
+			{:else if sortedDdays.length > 0}
+				<div class="grid gap-2">
+					{#each sortedDdays as entry (entry._id)}
+						<div class="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
+							<div class="flex-1 min-w-0">
+								<div class="flex items-center gap-2 mb-0.5">
+									<span class="px-1.5 py-0.5 text-xs sm:text-sm font-semibold rounded-md {entry.targetDate < todayYyyymmdd ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'}">
+										{ddayStatusLabel(entry.targetDate)}
+									</span>
+									<h4 class="font-semibold text-foreground text-base break-words">{entry.title}</h4>
+								</div>
+								<p class="text-muted-foreground text-xs sm:text-sm">
+									{entry.targetDate.slice(0, 4)}.{entry.targetDate.slice(4, 6)}.{entry.targetDate.slice(6, 8)}
+								</p>
+							</div>
+							<div class="flex gap-2 flex-shrink-0">
+								<button
+									onclick={() => editDday(entry)}
+									class="pressable rounded-lg px-3 py-1.5 text-sm font-medium border border-border text-foreground transition-colors pointer:hover:bg-muted"
+								>수정</button>
+								<button
+									onclick={() => handleDdayDelete(entry)}
+									class="pressable rounded-lg px-3 py-1.5 text-sm font-medium border border-border text-destructive transition-colors pointer:hover:bg-destructive/10"
+								>삭제</button>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<div class="text-center py-8 text-muted-foreground">등록된 D-Day가 없습니다.</div>
 			{/if}
 		</div>
 	{/if}

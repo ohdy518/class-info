@@ -31,24 +31,31 @@ $effect(() => {
 
 <svelte:head>
 	{#if detail.data?.notice}
-		<title>{detail.data.notice.subject} {detail.data.notice.title} | 1-3 학급 공지</title>
-		<meta name="description" content="{getFirstLine(detail.data.notice.description) || '공지 내용을 확인하세요!'}" />
+		<title>{detail.data.notice.subject} {detail.data.notice.title} - 1학년 6반</title>
+		<meta name="description" content="{getFirstLine(detail.data.notice.description) || '공지 내용을 확인하세요.'}" />
 
 		<!-- Open Graph -->
-		<meta property="og:title" content="{detail.data.notice.subject} {detail.data.notice.title} | 1-3 학급 공지" />
-		<meta property="og:description" content="{getFirstLine(detail.data.notice.description) || '공지 내용을 확인하세요!'}" />
+		<meta property="og:title" content="{detail.data.notice.subject} {detail.data.notice.title} - 1학년 6반" />
+		<meta property="og:description" content="{getFirstLine(detail.data.notice.description) || '공지 내용을 확인하세요.'}" />
+		<meta property="og:url" content="https://school.ohdy.dev/notice/{page.params.id}" />
 		<meta property="og:type" content="article" />
-		<meta property="og:site_name" content="TimeforSchool" />
+		<meta property="og:site_name" content="school.ohdy.dev" />
 
 		<!-- Twitter Card -->
 		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:title" content="{detail.data.notice.subject} {detail.data.notice.title} | 1-3 학급 공지" />
-		<meta name="twitter:description" content="{getFirstLine(detail.data.notice.description) || '공지 내용을 확인하세요!'}" />
+		<meta name="twitter:title" content="{detail.data.notice.subject} {detail.data.notice.title} - 1학년 6반" />
+		<meta name="twitter:description" content="{getFirstLine(detail.data.notice.description) || '공지 내용을 확인하세요.'}" />
 	{:else}
-		<title>공지 상세 - 1-3 학급 공지</title>
+		<title>공지 상세 - 1학년 6반</title>
 		<meta name="description" content="학급 공지의 상세 내용을 확인하세요." />
-		<meta property="og:title" content="공지 상세 - 학급 공지" />
+		<meta property="og:title" content="공지 상세 - 1학년 6반" />
 		<meta property="og:description" content="학급 공지의 상세 내용을 확인하세요." />
+		<meta property="og:url" content="https://school.ohdy.dev/notice/{page.params.id}" />
+		<meta property="og:type" content="article" />
+		<meta property="og:site_name" content="school.ohdy.dev" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="공지 상세 - 1학년 6반" />
+		<meta name="twitter:description" content="학급 공지의 상세 내용을 확인하세요." />
 	{/if}
 </svelte:head>
 

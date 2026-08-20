@@ -210,19 +210,20 @@ async function saveTimetable() {
 </script>
 
 <svelte:head>
-	<title>관리자 페이지 - 1학년 6반 공지</title>
-	<meta name="description" content="1학년 6반 공지 관리자 페이지입니다. " />
+	<title>관리자 페이지 - 1학년 6반</title>
+	<meta name="description" content="1학년 6반 공지 관리자 페이지입니다." />
 
 	<!-- Open Graph -->
-	<meta property="og:title" content="관리자 페이지 - 1학년 6반 공지" />
-	<meta property="og:description" content="1학년 6반 공지 관리자 페이지입니다. " />
+	<meta property="og:title" content="관리자 페이지 - 1학년 6반" />
+	<meta property="og:description" content="1학년 6반 공지 관리자 페이지입니다." />
+	<meta property="og:url" content="https://school.ohdy.dev/admin" />
 	<meta property="og:type" content="website" />
-	<meta property="og:site_name" content="TimeforSchool" />
+	<meta property="og:site_name" content="school.ohdy.dev" />
 
 	<!-- Twitter Card -->
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="관리자 페이지 - 1학년 6반 공지" />
-	<meta name="twitter:description" content="1학년 6반 공지 관리자 페이지입니다. " />
+	<meta name="twitter:title" content="관리자 페이지 - 1학년 6반" />
+	<meta name="twitter:description" content="1학년 6반 공지 관리자 페이지입니다." />
 
 	<!-- Additional meta tags -->
 	<meta name="robots" content="noindex, nofollow" />

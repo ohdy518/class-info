@@ -142,15 +142,15 @@ function isToday(dateStr: string): boolean {
 
 <svelte:head>
 	<title>오늘 - 1학년 6반</title>
-	<meta name="description" content="오늘의 시간표, 급식, 공지를 한눈에 확인하세요." />
+	<meta name="description" content="오늘의 시간표와 급식, 공지 사항을 확인하세요." />
 	<meta property="og:title" content="오늘 - 1학년 6반" />
-	<meta property="og:description" content="오늘의 시간표, 급식, 공지를 한눈에 확인하세요." />
-	<meta property="og:url" content="https://timefor.school" />
+	<meta property="og:description" content="오늘의 시간표와 급식, 공지 사항을 확인하세요." />
+	<meta property="og:url" content="https://school.ohdy.dev" />
 	<meta property="og:type" content="website" />
-	<meta property="og:site_name" content="TimeforSchool" />
+	<meta property="og:site_name" content="school.ohdy.dev" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content="오늘 - 1학년 6반" />
-	<meta name="twitter:description" content="오늘의 시간표, 급식, 공지를 한눈에 확인하세요." />
+	<meta name="twitter:description" content="오늘의 시간표와 급식, 공지 사항을 확인하세요." />
 </svelte:head>
 
 <div class="max-w-4xl mx-auto px-4 pt-6 pb-16 sm:pt-8">

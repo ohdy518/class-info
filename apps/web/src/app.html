@@ -10,10 +10,10 @@
 					document.documentElement.classList.remove('dark')
 				}
 			}
-			
+
 			// Set initial theme
 			updateTheme()
-			
+
 			// Listen for system theme changes
 			window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme)
 		</script>
@@ -78,20 +78,23 @@
 		<meta name="apple-touch-fullscreen" content="yes" />
 		<meta name="format-detection" content="telephone=no" />
 		<meta name="color-scheme" content="light dark" />
-		
+
 		<!-- Theme colors for iOS Safari -->
 		<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
 		<meta name="theme-color" content="#0f0f0f" media="(prefers-color-scheme: dark)" />
 		<meta name="msapplication-navbutton-color" content="#fafafa" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-		
+
 		<link rel="stylesheet" as="style" crossorigin href="/pretendard/dist/web/static/pretendard-dynamic-subset.css" />
+
+		<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "2647076cfa9340e9b00e32a455ed0c67"}'></script><!-- End Cloudflare Web Analytics -->
+
 %sveltekit.head%
-		
+
 	</head>
 	<body class="min-h-screen bg-background text-foreground antialiased break-keep" data-sveltekit-preload-data="hover">
 		<div style="display: contents;">
 			%sveltekit.body%
 		</div>
-		
+
 </html>

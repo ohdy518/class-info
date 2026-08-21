@@ -5,5 +5,9 @@ import { api } from "@class-info/backend/convex/_generated/api";
 
 export const load = (async () => {
 	const client = new ConvexHttpClient(PUBLIC_CONVEX_URL!);
-    return await client.query(api.notices.overview, {});
+	const [overview, standingNotices] = await Promise.all([
+		client.query(api.notices.overview, {}),
+		client.query(api.notices.standingNotices, {}),
+	]);
+	return { ...overview, standingNotices };
 }) satisfies PageServerLoad;

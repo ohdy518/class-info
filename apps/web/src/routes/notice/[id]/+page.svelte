@@ -98,9 +98,11 @@ $effect(() => {
 					<h2 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground sm:mb-1">
 						{detail.data.notice.title}
 					</h2>
-					<p class="text-sm sm:text-base text-muted-foreground">
-						마감일: {formatDate(detail.data.notice.dueDate)}
-					</p>
+					{#if detail.data.notice.dueDate}
+						<p class="text-sm sm:text-base text-muted-foreground">
+							마감일: {formatDate(detail.data.notice.dueDate)}
+						</p>
+					{/if}
 				</div>
 
 				{#if html}

@@ -10,7 +10,8 @@ const noticeFields = {
   subject: v.string(),
   type: v.union(v.literal("수행평가"), v.literal("숙제"), v.literal("준비물"), v.literal("기타")),
   description: v.string(),
-  dueDate: v.string(),
+  kind: v.union(v.literal("dated"), v.literal("standing")),
+  dueDate: v.optional(v.string()),
   files: v.optional(v.array(v.id("files"))),
   slug: v.optional(v.string()),
 };
@@ -30,6 +31,15 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 function assertValidDueDate(dueDate: string): void {
   if (!ISO_DATE.test(dueDate) || Number.isNaN(new Date(dueDate).getTime())) {
     throw new Error("Invalid dueDate; expected a valid YYYY-MM-DD string");
+  }
+}
+
+function assertNoticeKindFields(kind: "dated" | "standing", dueDate: string | undefined): void {
+  if (kind === "dated") {
+    if (!dueDate) throw new Error("dueDate is required for dated notices");
+    assertValidDueDate(dueDate);
+  } else if (dueDate) {
+    throw new Error("dueDate must be omitted for standing notices");
   }
 }
 
@@ -72,7 +82,7 @@ type MinimalNotice = {
   title: string;
   subject: string;
   type: string;
-  dueDate: string;
+  dueDate?: string;
   updatedAt?: number;
   createdAt?: number;
   hasFiles: boolean;
@@ -126,6 +136,7 @@ function toDisplayDate(due: Date, today: Date): { displayDate: string; isToday: 
 function groupByDay(rows: Doc<"notices">[], today: Date): DayGroup[] {
   const groups = new Map<string, DayGroup>();
   for (const n of rows) {
+    if (!n.dueDate) continue; // standing notices have no date to group by
     const due = new Date(n.dueDate);
     const key = due.toDateString();
     if (!groups.has(key)) {
@@ -144,6 +155,7 @@ type MonthSummary = { monthKey: string; monthName: string; total: number };
 function summarizeMonths(rows: Doc<"notices">[]): MonthSummary[] {
   const monthMap = new Map<string, MonthSummary>();
   for (const n of rows) {
+    if (!n.dueDate) continue; // standing notices have no date to group by
     const d = new Date(n.dueDate);
     const key = `${d.getFullYear()}-${d.getMonth()}`;
     if (!monthMap.has(key)) {
@@ -201,6 +213,18 @@ export const pastByMonth = query({
   },
 });
 
+export const standingNotices = query({
+  handler: async (ctx) => {
+    const rows = await ctx.db
+      .query("notices")
+      .withIndex("by_kind", (q) => q.eq("kind", "standing"))
+      .collect();
+    return rows
+      .map(toMinimalNotice)
+      .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+  },
+});
+
 export const overview = query({
   handler: async (ctx) => {
     const cutoff = kstCutoffDateString();
@@ -255,7 +279,7 @@ export const create = mutation({
   handler: async (ctx, args) => {
     await requireAdmin(ctx, args.sessionToken);
     const { sessionToken: _t, ...fields } = args;
-    assertValidDueDate(fields.dueDate);
+    assertNoticeKindFields(fields.kind, fields.dueDate);
     const now = Date.now();
     const slug = fields.slug && fields.slug.length > 0 ? fields.slug : await createUniqueSlug(ctx);
     return await ctx.db.insert("notices", { ...fields, slug, createdAt: now, updatedAt: now });
@@ -267,7 +291,7 @@ export const update = mutation({
   handler: async (ctx, args) => {
     await requireAdmin(ctx, args.sessionToken);
     const { sessionToken: _t, id, slug, ...updates } = args;
-    assertValidDueDate(updates.dueDate);
+    assertNoticeKindFields(updates.kind, updates.dueDate);
     let finalSlug = slug;
     if (slug === undefined) {
       // keep existing slug
@@ -276,6 +300,10 @@ export const update = mutation({
     }
     await ctx.db.patch(id, {
       ...updates,
+      // An absent `dueDate` key leaves the stored field untouched (Convex patch
+      // semantics), so a dated→standing edit must clear it explicitly here
+      // rather than relying on the caller's payload shape.
+      dueDate: updates.kind === "standing" ? undefined : updates.dueDate,
       ...(finalSlug !== undefined ? { slug: finalSlug } : {}),
       updatedAt: Date.now(),
     });

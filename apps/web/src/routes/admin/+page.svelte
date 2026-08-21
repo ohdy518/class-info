@@ -28,6 +28,7 @@ const noticeForm = writable({
 	title: '',
 	subject: '',
 	type: '숙제' as '수행평가' | '숙제' | '준비물' | '기타',
+	kind: 'dated' as 'dated' | 'standing',
 	description: '',
 	dueDate: '',
 	files: [] as any[]
@@ -42,6 +43,7 @@ const noticeTypes = ['수행평가', '숙제', '준비물', '기타'] as const;
 import AdminPastMonthDetails from '../../components/AdminPastMonthDetails.svelte';
 import { useQuery } from 'convex-svelte';
 const overview = useQuery(api.notices.overview, {});
+const standingQuery = useQuery(api.notices.standingNotices, {});
 let openMonthKey = $state<string | null>(null);
 
 function resetForm() {
@@ -49,6 +51,7 @@ function resetForm() {
 		title: '',
 		subject: '',
 		type: '숙제',
+		kind: 'dated',
 		description: '',
 		dueDate: '',
 		files: []
@@ -76,6 +79,7 @@ async function editNotice(noticeOrId: any) {
 		title: full.title || '',
 		subject: full.subject || '',
 		type: full.type || '숙제',
+		kind: full.kind || 'dated',
 		description: typeof full.description === 'string' ? full.description : '',
 		dueDate: full.dueDate || '',
 		files: Array.isArray(full.files) ? full.files : []
@@ -98,11 +102,16 @@ async function handleSubmit() {
 	const formData = $noticeForm;
 	const payload = {
 		...formData,
-		description: typeof formData.description === 'string' ? formData.description : ''
+		description: typeof formData.description === 'string' ? formData.description : '',
+		dueDate: formData.kind === 'standing' ? undefined : formData.dueDate
 	};
 
-	if (!payload.title || !payload.subject || !payload.dueDate) {
+	if (!payload.title || !payload.subject) {
 		alert('필수 항목을 모두 입력해주세요.');
+		return;
+	}
+	if (payload.kind === 'dated' && !payload.dueDate) {
+		alert('마감일을 입력해주세요.');
 		return;
 	}
 
@@ -391,6 +400,17 @@ function ddayStatusLabel(targetDate: string): string {
 
 				<div class="grid gap-4">
 					<div>
+						<div class="block text-sm font-medium mb-1.5 text-muted-foreground">공지 유형 *</div>
+						<SegmentedControl
+							bind:value={$noticeForm.kind}
+							options={[
+								{ value: 'dated', label: '마감 공지' },
+								{ value: 'standing', label: '상시 공지' }
+							]}
+						/>
+					</div>
+
+					<div>
 						<label for="notice-title" class="block text-sm font-medium mb-1.5 text-muted-foreground">제목 *</label>
 						<input
 							id="notice-title"
@@ -423,6 +443,7 @@ function ddayStatusLabel(targetDate: string): string {
 						</div>
 					</div>
 
+					{#if $noticeForm.kind === 'dated'}
 					<div>
 						<label for="notice-date" class="block text-sm font-medium mb-1.5 text-muted-foreground">마감일 *</label>
 						<input
@@ -432,6 +453,7 @@ function ddayStatusLabel(targetDate: string): string {
 							class="w-full h-11 px-3.5 rounded-xl border border-border text-base bg-muted text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
 						/>
 					</div>
+					{/if}
 
 					<div>
 						<label for="notice-description" class="block text-sm font-medium mb-1.5 text-muted-foreground">설명 (마크다운 지원)</label>
@@ -576,6 +598,64 @@ function ddayStatusLabel(targetDate: string): string {
                 </div>
             {/if}
 		{/if}
+
+		<!-- Standing Notices (no due date) -->
+		<div class="mt-6 pt-6 border-t border-border">
+			<h3 class="text-base sm:text-lg font-semibold tracking-tight mb-3 text-foreground border-l-[3px] border-foreground pl-3">
+				상시 공지
+			</h3>
+			{#if standingQuery.isLoading}
+				<div class="text-center py-8 text-muted-foreground">로딩 중...</div>
+			{:else if standingQuery.error}
+				<div class="text-center py-8 text-destructive">알림을 불러오는 중 오류가 발생했습니다.</div>
+			{:else if standingQuery.data && standingQuery.data.length > 0}
+				<div class="grid gap-2">
+					{#each standingQuery.data as notice (notice._id)}
+						<div class="bg-card border border-border rounded-xl p-3 overflow-hidden">
+							<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+								<div class="flex-1 min-w-0">
+									<div class="flex items-center gap-1.5 sm:gap-2 mb-1">
+										<span class="px-1.5 py-0.5 text-xs sm:text-sm font-semibold rounded-md {getTypeColor(notice.type)}">
+											{notice.type}
+										</span>
+										<span class="text-sm font-semibold text-muted-foreground">
+											{notice.subject}
+										</span>
+									</div>
+									<div class="flex items-center gap-1.5 sm:mb-1 mb-0.5">
+										<h4 class="font-semibold text-foreground text-base break-words">
+											{notice.title}
+										</h4>
+										{#if notice.hasFiles}
+											<svg class="w-3 h-3 text-muted-foreground flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+												<path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 0 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 0-1.414z" clip-rule="evenodd"/>
+											</svg>
+										{/if}
+									</div>
+									{#if notice.summary}
+									<p class="text-muted-foreground text-xs sm:text-sm font-medium line-clamp-2 overflow-hidden text-ellipsis break-all">
+										{notice.summary}
+									</p>
+									{/if}
+								</div>
+								<div class="flex gap-2 flex-shrink-0">
+									<button
+										onclick={() => editNotice(notice)}
+										class="pressable rounded-lg px-3 py-1.5 text-sm font-medium border border-border text-foreground transition-colors pointer:hover:bg-muted"
+									>수정</button>
+									<button
+										onclick={() => handleDelete(notice)}
+										class="pressable rounded-lg px-3 py-1.5 text-sm font-medium border border-border text-destructive transition-colors pointer:hover:bg-destructive/10"
+									>삭제</button>
+								</div>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<div class="text-center py-8 text-muted-foreground">등록된 상시 공지가 없습니다.</div>
+			{/if}
+		</div>
 
 		<!-- Footer -->
 		<div class="text-center py-4 text-xs text-muted-foreground border-t border-border mt-8 tabular-nums">

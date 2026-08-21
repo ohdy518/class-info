@@ -31,7 +31,7 @@ export function generateCopyText(groups: any[]): string {
 	if (!groups || groups.length === 0) return '';
 	let text = '📢수행평가 안내\n';
 	for (const group of groups) {
-		const performanceNotices = (group.notices as any[]).filter((n: any) => n.type === '수행평가');
+		const performanceNotices = (group.notices as any[]).filter((n: any) => n.type === '수행평가' && n.dueDate);
 		if (performanceNotices.length > 0) {
 			const date = new Date(performanceNotices[0].dueDate);
 			const weekday = WEEKDAYS_KR[date.getDay()];

@@ -7,12 +7,13 @@ export default defineSchema({
     subject: v.string(),
     type: v.union(v.literal("수행평가"), v.literal("숙제"), v.literal("준비물"), v.literal("기타")),
     description: v.string(),
-    dueDate: v.string(), // ISO date string
+    kind: v.optional(v.union(v.literal("dated"), v.literal("standing"))), // absent = "dated" (legacy rows)
+    dueDate: v.optional(v.string()), // ISO date string; required when kind === "dated"
     createdAt: v.number(),
     updatedAt: v.number(),
     files: v.optional(v.array(v.id("files"))),
     slug: v.optional(v.string()),
-  }).index("by_due_date", ["dueDate"]).index("by_slug", ["slug"]),
+  }).index("by_due_date", ["dueDate"]).index("by_slug", ["slug"]).index("by_kind", ["kind"]),
   
   files: defineTable({
     name: v.string(),

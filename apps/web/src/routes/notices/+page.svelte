@@ -2,7 +2,9 @@
 import { useQuery } from 'convex-svelte';
 import { api } from "@class-info/backend/convex/_generated/api";
 import NoticeGroup from '../../components/NoticeGroup.svelte';
+import NoticeCard from '../../components/NoticeCard.svelte';
 import PastMonthDetails from '../../components/PastMonthDetails.svelte';
+import SegmentedControl from '../../components/SegmentedControl.svelte';
 import LoadingState from '../../components/LoadingState.svelte';
 import ErrorState from '../../components/ErrorState.svelte';
 import EmptyState from '../../components/EmptyState.svelte';
@@ -11,9 +13,15 @@ import type { PageData } from './$types.js';
 
 let { data }: { data: PageData } = $props();
 let openMonthKey = $state<string | null>(null);
+let activeView = $state<'dated' | 'standing'>('dated');
 
 const overview = useQuery(api.notices.overview, {}, () => ({
     initialData: data,
+    keepPreviousData: true,
+}));
+
+const standing = useQuery(api.notices.standingNotices, {}, () => ({
+    initialData: data.standingNotices,
     keepPreviousData: true,
 }));
 </script>
@@ -37,7 +45,18 @@ const overview = useQuery(api.notices.overview, {}, () => ({
 
 
 <div class="max-w-4xl mx-auto px-4 pt-5 pb-4 sm:pt-6">
+	<div class="mb-4 sm:mb-6">
+		<SegmentedControl
+			bind:value={activeView}
+			options={[
+				{ value: 'dated', label: '마감 공지' },
+				{ value: 'standing', label: '상시 공지' }
+			]}
+		/>
+	</div>
+
 	<!-- Notice Board -->
+    {#if activeView === 'dated'}
     {#if overview.isLoading}
         <LoadingState />
     {:else if overview.error}
@@ -80,4 +99,19 @@ const overview = useQuery(api.notices.overview, {}, () => ({
         {/if}
     {/if}
     <NoticeFooter notices={overview.data?.currentGroups || []} />
+    {:else}
+    {#if standing.isLoading}
+        <LoadingState />
+    {:else if standing.error}
+        <ErrorState error={standing.error} />
+    {:else if standing.data && standing.data.length > 0}
+        <div class="grid gap-1.5 sm:gap-2">
+            {#each standing.data as notice (notice._id)}
+                <NoticeCard {notice} />
+            {/each}
+        </div>
+    {:else}
+        <EmptyState />
+    {/if}
+    {/if}
 </div>
